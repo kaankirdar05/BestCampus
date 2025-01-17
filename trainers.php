@@ -205,8 +205,10 @@ mysqli_close($conn);
 
         <!-- Trainers Section -->
         <section id="trainers" class="trainers">
-            <div class="container" id="trainers-container">
-                <!-- Trainers will be dynamically loaded here -->
+            <div class="container">
+                <div class="row" id="trainers-container">
+                    <!-- Trainers will be dynamically loaded here -->
+                </div>
             </div>
         </section>
     </main>
@@ -267,7 +269,7 @@ mysqli_close($conn);
 
                 if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
                     const trainerCard = `
-                        <div class="col-lg-3 col-md-2">
+                        <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
                             <div class="member">
                                 <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
                                 <h4>${trainer.info.name} ${trainer.info.surname}</h4>

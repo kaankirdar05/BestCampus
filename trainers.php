@@ -16,15 +16,15 @@ if (!$conn) {
 
 mysqli_set_charset($conn, "utf8mb4");
 
-// Fetch trainers from the database
+// Fetch trainers and related data
 $query = "
     SELECT 
         U.user_id, U.name, U.surname, U.university, U.faculty, U.small_description, U.image_path,
         L.lesson_name, L.lesson_category, L.lesson_subcategory, TA.day_of_week
     FROM Users U
-    LEFT JOIN Teacher_lessons TL ON U.user_id = TL.teacher_id
+    LEFT JOIN Teacher_Lessons TL ON U.user_id = TL.teacher_id
     LEFT JOIN Lessons L ON TL.lesson_id = L.lesson_id
-    LEFT JOIN Teacher_availability TA ON U.user_id = TA.teacher_id
+    LEFT JOIN Teacher_Availability TA ON U.user_id = TA.teacher_id
     WHERE U.role = 1
 ";
 $result = mysqli_query($conn, $query);
@@ -35,30 +35,43 @@ if (!$result) {
 
 $trainers = [];
 $categories = [];
-$subcategories = [];
 $days = [];
 
 while ($row = mysqli_fetch_assoc($result)) {
-    $trainers[$row['user_id']]['info'] = $row;
-    if ($row['lesson_category']) {
-        $trainers[$row['user_id']]['lessons'][$row['lesson_category']][] = $row['lesson_subcategory'];
-    }
-    if ($row['day_of_week']) {
-        $trainers[$row['user_id']]['availability'][] = $row['day_of_week'];
+    $trainerId = $row['user_id'];
+    if (!isset($trainers[$trainerId])) {
+        $trainers[$trainerId] = [
+            'info' => [
+                'name' => $row['name'],
+                'surname' => $row['surname'],
+                'university' => $row['university'],
+                'faculty' => $row['faculty'],
+                'small_description' => $row['small_description'],
+                'image_path' => $row['image_path'],
+            ],
+            'lessons' => [],
+            'availability' => [],
+        ];
     }
 
-    if ($row['lesson_category'] && !isset($categories[$row['lesson_category']])) {
-        $categories[$row['lesson_category']] = [];
+    if ($row['lesson_category']) {
+        $trainers[$trainerId]['lessons'][] = [
+            'category' => $row['lesson_category'],
+            'subcategory' => $row['lesson_subcategory'],
+            'lesson_name' => $row['lesson_name'],
+        ];
+        if (!isset($categories[$row['lesson_category']])) {
+            $categories[$row['lesson_category']] = [];
+        }
+        if (!in_array($row['lesson_subcategory'], $categories[$row['lesson_category']])) {
+            $categories[$row['lesson_category']][] = $row['lesson_subcategory'];
+        }
     }
-    if ($row['lesson_category'] && !in_array($row['lesson_subcategory'], $categories[$row['lesson_category']])) {
-        $categories[$row['lesson_category']][] = $row['lesson_subcategory'];
+
+    if ($row['day_of_week'] && !in_array($row['day_of_week'], $trainers[$trainerId]['availability'])) {
+        $trainers[$trainerId]['availability'][] = $row['day_of_week'];
     }
-    if ($row['lesson_name'] && !isset($subcategories[$row['lesson_name']])) {
-        $subcategories[$row['lesson_name']] = [];
-    }
-    if ($row['lesson_subcategory'] && !in_array($row['lesson_subcategory'], $subcategories[$row['lesson_name']])) {
-        $subcategories[$row['lesson_name']][] = $row['lesson_subcategory'];
-    }
+
     if ($row['day_of_week'] && !in_array($row['day_of_week'], $days)) {
         $days[] = $row['day_of_week'];
     }
@@ -130,84 +143,59 @@ mysqli_close($conn);
 </head>
 
 <body>
-
     <!-- ======= Header ======= -->
     <?php
-    include("headerCheck.php");
+        include("headerCheck.php");
     ?>
     <!-- End Header -->
 
     <main id="main" data-aos="fade-in">
 
-        <!-- ======= Breadcrumbs ======= -->
         <div class="breadcrumbs">
             <div class="container">
                 <h2>Trainers</h2>
             </div>
-        </div><!-- End Breadcrumbs -->
+        </div>
 
         <!-- Filter Section -->
         <section id="filter" class="filter">
-            <div class="container" data-aos="fade-up">
+            <div class="container">
                 <div class="row">
-                    <div class="col-lg-3">
-                        <label for="lessonSelect">Select Lesson:</label>
-                        <select id="lessonSelect" class="form-select" onchange="updateCategories(); filterTrainers();">
-                            <option value="">All Lessons</option>
-                            <?php foreach ($subcategories as $lesson => $subs): ?>
-                                <option value="<?php echo htmlspecialchars($lesson); ?>"><?php echo htmlspecialchars($lesson); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
                     <div class="col-lg-3">
                         <label for="categorySelect">Select Category:</label>
                         <select id="categorySelect" class="form-select" onchange="updateSubcategories(); filterTrainers();">
                             <option value="">All Categories</option>
-                            <?php foreach ($categories as $category => $subs): ?>
-                                <option value="<?php echo htmlspecialchars($category); ?>"><?php echo htmlspecialchars($category); ?></option>
+                            <?php foreach ($categories as $category => $subcategories): ?>
+                                <option value="<?= htmlspecialchars($category); ?>"><?= htmlspecialchars($category); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-lg-3">
                         <label for="subcategorySelect">Select Subcategory:</label>
-                        <select id="subcategorySelect" class="form-select" onchange="filterTrainers()">
+                        <select id="subcategorySelect" class="form-select" onchange="filterTrainers();">
                             <option value="">All Subcategories</option>
                         </select>
                     </div>
                     <div class="col-lg-3">
                         <label for="daySelect">Select Day:</label>
-                        <select id="daySelect" class="form-select" onchange="filterTrainers()">
+                        <select id="daySelect" class="form-select" onchange="filterTrainers();">
                             <option value="">All Days</option>
                             <?php foreach ($days as $day): ?>
-                                <option value="<?php echo htmlspecialchars($day); ?>"><?php echo htmlspecialchars($day); ?></option>
+                                <option value="<?= htmlspecialchars($day); ?>"><?= htmlspecialchars($day); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
             </div>
-        </section><!-- End Filter Section -->
+        </section>
 
-        <!-- ======= Trainers Section ======= -->
+        <!-- Trainers Section -->
         <section id="trainers" class="trainers">
-            <div class="container" data-aos="fade-up">
-                <div class="row" data-aos="zoom-in" data-aos-delay="100" id="trainers-container">
-                    <?php foreach ($trainers as $trainer): ?>
-                        <div class="col-lg-3 col-md-2 d-flex align-items-stretch trainer-item" data-lesson="<?php echo htmlspecialchars($trainer['info']['lesson_name']); ?>" data-category="<?php echo htmlspecialchars(implode(',', array_keys($trainer['lessons'] ?? []))); ?>" data-subcategory="<?php echo htmlspecialchars(implode(',', array_merge(...array_values($trainer['lessons'] ?? [[]])))); ?>" data-day="<?php echo htmlspecialchars(implode(',', $trainer['availability'] ?? [])); ?>">
-                            <div class="member">
-                                <img src="<?php echo htmlspecialchars($trainer['info']['image_path']); ?>" class="img-fluid" alt="">
-                                <div class="member-content">
-                                    <h4><?php echo htmlspecialchars($trainer['info']['name'] . ' ' . $trainer['info']['surname']); ?></h4>
-                                    <span><?php echo htmlspecialchars($trainer['info']['university'] . ', ' . $trainer['info']['faculty']); ?></span>
-                                    <p><?php echo htmlspecialchars($trainer['info']['small_description']); ?></p>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
+            <div class="container" id="trainers-container">
+                <!-- Trainers will be dynamically loaded here -->
             </div>
-        </section><!-- End Trainers Section -->
-
-    </main><!-- End #main -->
+        </section>
+    </main>
 
     <!-- ======= Footer ======= -->
     <?php
@@ -228,43 +216,18 @@ mysqli_close($conn);
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
 
-    <!-- Custom JS for Filter -->
+    
     <script>
-        const categories = <?php echo json_encode($categories); ?>;
-        const subcategories = <?php echo json_encode($subcategories); ?>;
-
-        function updateCategories() {
-            const lessonSelect = document.getElementById('lessonSelect');
-            const categorySelect = document.getElementById('categorySelect');
-            const selectedLesson = lessonSelect.value;
-
-            // Clear previous options
-            categorySelect.innerHTML = '<option value="">All Categories</option>';
-
-            // Add new options
-            if (selectedLesson && subcategories[selectedLesson]) {
-                subcategories[selectedLesson].forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category;
-                    option.textContent = category;
-                    categorySelect.appendChild(option);
-                });
-            }
-
-            updateSubcategories();
-            filterTrainers();
-        }
+        const trainers = <?= json_encode(array_values($trainers)); ?>;
+        const categories = <?= json_encode($categories); ?>;
 
         function updateSubcategories() {
             const categorySelect = document.getElementById('categorySelect');
             const subcategorySelect = document.getElementById('subcategorySelect');
             const selectedCategory = categorySelect.value;
 
-            // Clear previous options
             subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
-
-            // Add new options
-            if (selectedCategory && categories[selectedCategory]) {
+            if (categories[selectedCategory]) {
                 categories[selectedCategory].forEach(subcategory => {
                     const option = document.createElement('option');
                     option.value = subcategory;
@@ -272,56 +235,40 @@ mysqli_close($conn);
                     subcategorySelect.appendChild(option);
                 });
             }
-
-            filterTrainers();
         }
 
         function filterTrainers() {
-            const lessonSelect = document.getElementById('lessonSelect');
-            const categorySelect = document.getElementById('categorySelect');
-            const subcategorySelect = document.getElementById('subcategorySelect');
-            const daySelect = document.getElementById('daySelect');
-            const selectedLesson = lessonSelect.value;
-            const selectedCategory = categorySelect.value;
-            const selectedSubcategory = subcategorySelect.value;
-            const selectedDay = daySelect.value;
+            const category = document.getElementById('categorySelect').value;
+            const subcategory = document.getElementById('subcategorySelect').value;
+            const day = document.getElementById('daySelect').value;
 
-            document.querySelectorAll('.trainer-item').forEach(item => {
-                const itemLessons = item.getAttribute('data-lesson').split(',');
-                const itemCategories = item.getAttribute('data-category').split(',');
-                const itemSubcategories = item.getAttribute('data-subcategory').split(',');
-                const itemDays = item.getAttribute('data-day').split(',');
+            const container = document.getElementById('trainers-container');
+            container.innerHTML = '';
 
-                let showItem = true;
+            trainers.forEach(trainer => {
+                const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
+                const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
+                const hasDay = trainer.availability.includes(day) || !day;
 
-                if (selectedLesson && !itemLessons.includes(selectedLesson)) {
-                    showItem = false;
+                if (hasCategory && hasSubcategory && hasDay) {
+                    const trainerCard = `
+                        <div class="col-lg-3 col-md-2">
+                            <div class="member">
+                                <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
+                                <h4>${trainer.info.name} ${trainer.info.surname}</h4>
+                                <p>${trainer.info.university}, ${trainer.info.faculty}</p>
+                                <p>${trainer.info.small_description}</p>
+                            </div>
+                        </div>`;
+                    container.innerHTML += trainerCard;
                 }
-
-                if (selectedCategory && !itemCategories.includes(selectedCategory)) {
-                    showItem = false;
-                }
-
-                if (selectedSubcategory && !itemSubcategories.includes(selectedSubcategory)) {
-                    showItem = false;
-                }
-
-                if (selectedDay && !itemDays.includes(selectedDay)) {
-                    showItem = false;
-                }
-
-                item.style.display = showItem ? 'block' : 'none';
             });
         }
 
-        // Initial filter setup
         document.addEventListener('DOMContentLoaded', () => {
-            updateCategories();
             updateSubcategories();
             filterTrainers();
         });
     </script>
-
 </body>
-
 </html>

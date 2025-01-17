@@ -35,6 +35,7 @@ if (!$result) {
 
 $trainers = [];
 $categories = [];
+$lessonNames = [];
 $days = [];
 
 while ($row = mysqli_fetch_assoc($result)) {
@@ -60,12 +61,17 @@ while ($row = mysqli_fetch_assoc($result)) {
             'subcategory' => $row['lesson_subcategory'],
             'lesson_name' => $row['lesson_name'],
         ];
+
         if (!isset($categories[$row['lesson_category']])) {
             $categories[$row['lesson_category']] = [];
         }
         if (!in_array($row['lesson_subcategory'], $categories[$row['lesson_category']])) {
             $categories[$row['lesson_category']][] = $row['lesson_subcategory'];
         }
+    }
+
+    if ($row['lesson_name'] && !in_array($row['lesson_name'], $lessonNames)) {
+        $lessonNames[] = $row['lesson_name'];
     }
 
     if ($row['day_of_week'] && !in_array($row['day_of_week'], $trainers[$trainerId]['availability'])) {
@@ -150,7 +156,6 @@ mysqli_close($conn);
     <!-- End Header -->
 
     <main id="main" data-aos="fade-in">
-
         <div class="breadcrumbs">
             <div class="container">
                 <h2>Trainers</h2>
@@ -161,6 +166,15 @@ mysqli_close($conn);
         <section id="filter" class="filter">
             <div class="container">
                 <div class="row">
+                    <div class="col-lg-3">
+                        <label for="lessonNameSelect">Select Lesson:</label>
+                        <select id="lessonNameSelect" class="form-select" onchange="filterTrainers();">
+                            <option value="">All Lessons</option>
+                            <?php foreach ($lessonNames as $lessonName): ?>
+                                <option value="<?= htmlspecialchars($lessonName); ?>"><?= htmlspecialchars($lessonName); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
                     <div class="col-lg-3">
                         <label for="categorySelect">Select Category:</label>
                         <select id="categorySelect" class="form-select" onchange="updateSubcategories(); filterTrainers();">
@@ -196,7 +210,6 @@ mysqli_close($conn);
             </div>
         </section>
     </main>
-
     <!-- ======= Footer ======= -->
     <?php
     include("footer.php");
@@ -216,7 +229,7 @@ mysqli_close($conn);
     <!-- Template Main JS File -->
     <script src="assets/js/main.js"></script>
 
-    
+
     <script>
         const trainers = <?= json_encode(array_values($trainers)); ?>;
         const categories = <?= json_encode($categories); ?>;
@@ -238,6 +251,7 @@ mysqli_close($conn);
         }
 
         function filterTrainers() {
+            const lessonName = document.getElementById('lessonNameSelect').value;
             const category = document.getElementById('categorySelect').value;
             const subcategory = document.getElementById('subcategorySelect').value;
             const day = document.getElementById('daySelect').value;
@@ -246,11 +260,12 @@ mysqli_close($conn);
             container.innerHTML = '';
 
             trainers.forEach(trainer => {
+                const hasLessonName = trainer.lessons.some(lesson => lesson.lesson_name === lessonName || !lessonName);
                 const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
                 const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
                 const hasDay = trainer.availability.includes(day) || !day;
 
-                if (hasCategory && hasSubcategory && hasDay) {
+                if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
                     const trainerCard = `
                         <div class="col-lg-3 col-md-2">
                             <div class="member">

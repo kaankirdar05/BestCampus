@@ -43,6 +43,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     if (!isset($trainers[$trainerId])) {
         $trainers[$trainerId] = [
             'info' => [
+                'id' => $trainerId, // Add trainer_id for details link
                 'name' => $row['name'],
                 'surname' => $row['surname'],
                 'university' => $row['university'],
@@ -126,19 +127,19 @@ mysqli_close($conn);
 
         .col-lg-3.col-md-2 {
             display: flex;
-            align-items: stretch;  /* This will make sure all .member divs in a row take equal height */
+            align-items: stretch;  /* Ensure consistent height */
             justify-content: center;
         }
 
         .member {
             display: flex;
-            flex-direction: column;  /* Ensures the content inside each member is organized vertically */
-            align-items: center;  /* Align items in the center horizontally */
-            text-align: center;  /* Ensures text within the member is centered */
-            width: 100%;  /* Optional: makes sure member takes the full width of the parent column */
+            flex-direction: column;  /* Organize content vertically */
+            align-items: center;  /* Center-align items */
+            text-align: center;  /* Center-align text */
+            width: 100%;
             border-radius: 20%;
+            cursor: pointer; /* Indicate clickability */
         }
-
         /* Custom dropdown styles */
         .form-select option:hover {
             background-color: green;
@@ -270,7 +271,7 @@ mysqli_close($conn);
                 if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
                     const trainerCard = `
                         <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
-                            <div class="member">
+                            <div class="member" onclick="redirectToDetails(${trainer.info.id})">
                                 <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
                                 <h4>${trainer.info.name} ${trainer.info.surname}</h4>
                                 <p>${trainer.info.university}, ${trainer.info.faculty}</p>
@@ -280,6 +281,10 @@ mysqli_close($conn);
                     container.innerHTML += trainerCard;
                 }
             });
+        }
+
+        function redirectToDetails(trainerId) {
+            window.location.href = `trainer-details.php?trainer_id=${trainerId}`;
         }
 
         document.addEventListener('DOMContentLoaded', () => {

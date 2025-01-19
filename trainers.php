@@ -43,7 +43,7 @@ while ($row = mysqli_fetch_assoc($result)) {
     if (!isset($trainers[$trainerId])) {
         $trainers[$trainerId] = [
             'info' => [
-                'id' => $trainerId, // Add trainer_id for details link
+                'user_id' => $trainerId,
                 'name' => $row['name'],
                 'surname' => $row['surname'],
                 'university' => $row['university'],
@@ -118,6 +118,30 @@ mysqli_close($conn);
     <link href="assets/css/style.css" rel="stylesheet">
 
     <style>
+        .hoverable-card {
+    position: relative; /* Ensure the stretched-link works correctly */
+    transition: transform 0.3s ease; /* Optional: Add a hover animation for the card */
+    }
+
+    .hoverable-card:hover {
+    transform: scale(1.03); /* Slightly enlarge the card on hover */
+    }
+
+    .hoverable-card h4 {
+    color: #000; /* Default name color */
+    transition: color 0.3s ease; /* Smooth transition for the text color */
+    }
+
+    .hoverable-card:hover h4 {
+    color: #5fcf80; /* Change name color on hover */
+    }
+
+    /* Remove underline for the stretched link */
+    .stretched-link {
+    text-decoration: none;
+    color: inherit; /* Use the inherited color */
+    }
+
         .member img {
             height: 300px;  /* Set a fixed height */
             width: 100%;    /* Make width stretch to fill the container */
@@ -127,19 +151,19 @@ mysqli_close($conn);
 
         .col-lg-3.col-md-2 {
             display: flex;
-            align-items: stretch;  /* Ensure consistent height */
+            align-items: stretch;  /* This will make sure all .member divs in a row take equal height */
             justify-content: center;
         }
 
         .member {
             display: flex;
-            flex-direction: column;  /* Organize content vertically */
-            align-items: center;  /* Center-align items */
-            text-align: center;  /* Center-align text */
-            width: 100%;
+            flex-direction: column;  /* Ensures the content inside each member is organized vertically */
+            align-items: center;  /* Align items in the center horizontally */
+            text-align: center;  /* Ensures text within the member is centered */
+            width: 100%;  /* Optional: makes sure member takes the full width of the parent column */
             border-radius: 20%;
-            cursor: pointer; /* Indicate clickability */
         }
+
         /* Custom dropdown styles */
         .form-select option:hover {
             background-color: green;
@@ -253,39 +277,38 @@ mysqli_close($conn);
             }
         }
 
-        function filterTrainers() {
-            const lessonName = document.getElementById('lessonNameSelect').value;
-            const category = document.getElementById('categorySelect').value;
-            const subcategory = document.getElementById('subcategorySelect').value;
-            const day = document.getElementById('daySelect').value;
+    function filterTrainers() {
+    const lessonName = document.getElementById('lessonNameSelect').value;
+    const category = document.getElementById('categorySelect').value;
+    const subcategory = document.getElementById('subcategorySelect').value;
+    const day = document.getElementById('daySelect').value;
 
-            const container = document.getElementById('trainers-container');
-            container.innerHTML = '';
+    const container = document.getElementById('trainers-container');
+    container.innerHTML = '';
 
-            trainers.forEach(trainer => {
-                const hasLessonName = trainer.lessons.some(lesson => lesson.lesson_name === lessonName || !lessonName);
-                const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
-                const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
-                const hasDay = trainer.availability.includes(day) || !day;
+    trainers.forEach(trainer => {
+        const hasLessonName = trainer.lessons.some(lesson => lesson.lesson_name === lessonName || !lessonName);
+        const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
+        const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
+        const hasDay = trainer.availability.includes(day) || !day;
 
-                if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
-                    const trainerCard = `
-                        <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
-                            <div class="member" onclick="redirectToDetails(${trainer.info.id})">
-                                <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
-                                <h4>${trainer.info.name} ${trainer.info.surname}</h4>
-                                <p>${trainer.info.university}, ${trainer.info.faculty}</p>
-                                <p>${trainer.info.small_description}</p>
-                            </div>
-                        </div>`;
-                    container.innerHTML += trainerCard;
-                }
-            });
+        if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
+            const trainerCard = `
+                <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
+                    <div class="member hoverable-card">
+                        <a href="trainer-details.php?trainer_id=${trainer.info.user_id}" class="stretched-link">
+                            <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
+                            <h4>${trainer.info.name} ${trainer.info.surname}</h4>
+                        </a>
+                        <p>${trainer.info.university}, ${trainer.info.faculty}</p>
+                        <p>${trainer.info.small_description}</p>
+                    </div>
+                </div>`;
+            container.innerHTML += trainerCard;
         }
+    });
+}
 
-        function redirectToDetails(trainerId) {
-            window.location.href = `trainer-details.php?trainer_id=${trainerId}`;
-        }
 
         document.addEventListener('DOMContentLoaded', () => {
             updateSubcategories();

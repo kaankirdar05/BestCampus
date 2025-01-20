@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Retrieve teacher's off days
 $teacher_id = $_SESSION['user_id'];
-$sql_off_days = "SELECT off_date_id, off_date, start_time, end_time FROM Teacher_off_dates WHERE teacher_id = '$teacher_id'";
+$sql_off_days = "SELECT off_date_id, off_date, start_time, end_time FROM Teacher_off_dates WHERE teacher_id = '$teacher_id' ORDER BY off_date ASC, start_time ASC";
 $result_off_days = mysqli_query($conn, $sql_off_days);
 $off_days_data = [];
 if ($result_off_days) {

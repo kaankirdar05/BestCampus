@@ -48,7 +48,8 @@ $student_lessons_sql = "
     JOIN Users ON Bookings.student_id = Users.user_id
     JOIN Users AS Teacher ON Bookings.teacher_id = Teacher.user_id
     JOIN Lessons ON Bookings.lesson_id = Lessons.lesson_id
-    WHERE Users.user_id = $user_id AND Bookings.lesson_time >= '$current_date'";
+    WHERE Users.user_id = $user_id AND Bookings.lesson_time >= '$current_date'
+    ORDER BY Bookings.lesson_time ASC, Bookings.start_time ASC";
 
 $student_lessons_result = mysqli_query($conn, $student_lessons_sql);
 
@@ -70,7 +71,8 @@ $teacher_given_lessons_sql = "
     JOIN Users ON Bookings.teacher_id = Users.user_id
     JOIN Users AS Student ON Bookings.student_id = Student.user_id
     JOIN Lessons ON Bookings.lesson_id = Lessons.lesson_id
-    WHERE Users.user_id = $user_id AND Bookings.lesson_time >= '$current_date'";
+    WHERE Users.user_id = $user_id AND Bookings.lesson_time >= '$current_date'
+    ORDER BY Bookings.lesson_time ASC, Bookings.start_time ASC";
 
 $teacher_given_lessons_result = mysqli_query($conn, $teacher_given_lessons_sql);
 

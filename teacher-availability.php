@@ -53,6 +53,8 @@ function turkish_days_format($day) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    // Handle saving availability in database
     if (isset($_POST['availability'])) {
         $action = "availability";
         $teacher_id = $_SESSION['user_id'];
@@ -122,9 +124,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Retrieve teacher's availability
+// Retrieve teacher's availability in chronological order
 $teacher_id = $_SESSION['user_id'];
-$sql_availability = "SELECT availability_id, day_of_week, start_time, end_time FROM Teacher_availability WHERE teacher_id = '$teacher_id'";
+$sql_availability = "SELECT availability_id, day_of_week, start_time, end_time 
+                     FROM Teacher_availability 
+                     WHERE teacher_id = '$teacher_id' 
+                     ORDER BY FIELD(day_of_week, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'), start_time";
 $result_availability = mysqli_query($conn, $sql_availability);
 $availability_data = [];
 if ($result_availability) {
@@ -133,8 +138,11 @@ if ($result_availability) {
     }
 }
 
-// Retrieve teacher's off days
-$sql_off_days = "SELECT off_date_id, off_date, start_time, end_time FROM Teacher_off_dates WHERE teacher_id = '$teacher_id'";
+// Retrieve teacher's off days in chronological order
+$sql_off_days = "SELECT off_date_id, off_date, start_time, end_time 
+                 FROM Teacher_off_dates 
+                 WHERE teacher_id = '$teacher_id' 
+                 ORDER BY off_date ASC, start_time ASC";
 $result_off_days = mysqli_query($conn, $sql_off_days);
 $off_days_data = [];
 if ($result_off_days) {
@@ -142,6 +150,7 @@ if ($result_off_days) {
         $off_days_data[] = $row;
     }
 }
+
 
 ?>
 

@@ -192,15 +192,6 @@ mysqli_close($conn);
             <div class="container">
                 <div class="row">
                     <div class="col-lg-3">
-                        <label for="lessonNameSelect">Select Lesson:</label>
-                        <select id="lessonNameSelect" class="form-select" onchange="filterTrainers();">
-                            <option value="">All Lessons</option>
-                            <?php foreach ($lessonNames as $lessonName): ?>
-                                <option value="<?= htmlspecialchars($lessonName); ?>"><?= htmlspecialchars($lessonName); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
                         <label for="categorySelect">Select Category:</label>
                         <select id="categorySelect" class="form-select" onchange="updateSubcategories(); filterTrainers();">
                             <option value="">All Categories</option>
@@ -213,6 +204,15 @@ mysqli_close($conn);
                         <label for="subcategorySelect">Select Subcategory:</label>
                         <select id="subcategorySelect" class="form-select" onchange="filterTrainers();">
                             <option value="">All Subcategories</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3">
+                        <label for="lessonNameSelect">Select Lesson:</label>
+                        <select id="lessonNameSelect" class="form-select" onchange="filterTrainers();">
+                            <option value="">All Lessons</option>
+                            <?php foreach ($lessonNames as $lessonName): ?>
+                                <option value="<?= htmlspecialchars($lessonName); ?>"><?= htmlspecialchars($lessonName); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="col-lg-3">
@@ -258,62 +258,128 @@ mysqli_close($conn);
 
 
     <script>
-        const trainers = <?= json_encode(array_values($trainers)); ?>;
-        const categories = <?= json_encode($categories); ?>;
+    const trainers = <?= json_encode(array_values($trainers)); ?>;
+    const categories = <?= json_encode($categories); ?>;
 
-        function updateSubcategories() {
-            const categorySelect = document.getElementById('categorySelect');
-            const subcategorySelect = document.getElementById('subcategorySelect');
-            const selectedCategory = categorySelect.value;
+    function updateDropdowns() {
+        const lessonSelect = document.getElementById('lessonNameSelect');
+        const categorySelect = document.getElementById('categorySelect');
+        const subcategorySelect = document.getElementById('subcategorySelect');
 
-            subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
-            if (categories[selectedCategory]) {
-                categories[selectedCategory].forEach(subcategory => {
-                    const option = document.createElement('option');
-                    option.value = subcategory;
-                    option.textContent = subcategory;
-                    subcategorySelect.appendChild(option);
-                });
-            }
-        }
+        const selectedLesson = lessonSelect.value;
+        const selectedCategory = categorySelect.value;
+        const selectedSubcategory = subcategorySelect.value;
+
+        // Collect relevant data based on the selection
+        const relevantCategories = new Set();
+        const relevantSubcategories = new Set();
+        const relevantLessons = new Set();
+
+        trainers.forEach(trainer => {
+            trainer.lessons.forEach(lesson => {
+                const matchLesson = !selectedLesson || lesson.lesson_name === selectedLesson;
+                const matchCategory = !selectedCategory || lesson.category === selectedCategory;
+                const matchSubcategory = !selectedSubcategory || lesson.subcategory === selectedSubcategory;
+
+                if (matchLesson && matchCategory && matchSubcategory) {
+                    relevantLessons.add(lesson.lesson_name);
+                    relevantCategories.add(lesson.category);
+                    relevantSubcategories.add(lesson.subcategory);
+                }
+            });
+        });
+
+        // Update lesson options
+        lessonSelect.innerHTML = '<option value="">All Lessons</option>';
+        relevantLessons.forEach(lesson => {
+            const option = document.createElement('option');
+            option.value = lesson;
+            option.textContent = lesson;
+            option.selected = lesson === selectedLesson;
+            lessonSelect.appendChild(option);
+        });
+
+        // Update category options
+        categorySelect.innerHTML = '<option value="">All Categories</option>';
+        relevantCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            option.selected = category === selectedCategory;
+            categorySelect.appendChild(option);
+        });
+
+        // Update subcategory options
+        subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
+        relevantSubcategories.forEach(subcategory => {
+            const option = document.createElement('option');
+            option.value = subcategory;
+            option.textContent = subcategory;
+            option.selected = subcategory === selectedSubcategory;
+            subcategorySelect.appendChild(option);
+        });
+    }
 
     function filterTrainers() {
-    const lessonName = document.getElementById('lessonNameSelect').value;
-    const category = document.getElementById('categorySelect').value;
-    const subcategory = document.getElementById('subcategorySelect').value;
-    const day = document.getElementById('daySelect').value;
+        const lessonName = document.getElementById('lessonNameSelect').value;
+        const category = document.getElementById('categorySelect').value;
+        const subcategory = document.getElementById('subcategorySelect').value;
+        const day = document.getElementById('daySelect').value;
 
-    const container = document.getElementById('trainers-container');
-    container.innerHTML = '';
+        const container = document.getElementById('trainers-container');
+        container.innerHTML = '';
 
-    trainers.forEach(trainer => {
-        const hasLessonName = trainer.lessons.some(lesson => lesson.lesson_name === lessonName || !lessonName);
-        const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
-        const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
-        const hasDay = trainer.availability.includes(day) || !day;
+        trainers.forEach(trainer => {
+            const hasLessonName = trainer.lessons.some(lesson => lesson.lesson_name === lessonName || !lessonName);
+            const hasCategory = trainer.lessons.some(lesson => lesson.category === category || !category);
+            const hasSubcategory = trainer.lessons.some(lesson => lesson.subcategory === subcategory || !subcategory);
+            const hasDay = trainer.availability.includes(day) || !day;
 
-        if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
-            const trainerCard = `
-                <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
-                    <div class="member hoverable-card">
-                        <a href="trainer-details.php?trainer_id=${trainer.info.user_id}" class="stretched-link">
-                            <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
-                            <h4>${trainer.info.name} ${trainer.info.surname}</h4>
-                        </a>
-                        <p>${trainer.info.university}, ${trainer.info.faculty}</p>
-                        <p>${trainer.info.small_description}</p>
-                    </div>
-                </div>`;
-            container.innerHTML += trainerCard;
-        }
-    });
-}
+            if (hasLessonName && hasCategory && hasSubcategory && hasDay) {
+                const trainerCard = `
+                    <div class="col-lg-3 col-md-6 d-flex align-items-stretch my-4 mt-md-0" data-aos="fade-up" data-aos-delay="200">
+                        <div class="member hoverable-card">
+                            <a href="trainer-details.php?trainer_id=${trainer.info.user_id}" class="stretched-link">
+                                <img src="${trainer.info.image_path}" alt="${trainer.info.name}">
+                                <h4>${trainer.info.name} ${trainer.info.surname}</h4>
+                            </a>
+                            <p>${trainer.info.university}, ${trainer.info.faculty}</p>
+                            <p>${trainer.info.small_description}</p>
+                        </div>
+                    </div>`;
+                container.innerHTML += trainerCard;
+            }
+        });
+    }
 
+    document.addEventListener('DOMContentLoaded', () => {
+        const lessonSelect = document.getElementById('lessonNameSelect');
+        const categorySelect = document.getElementById('categorySelect');
+        const subcategorySelect = document.getElementById('subcategorySelect');
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateSubcategories();
+        // Add event listeners to update dropdowns and filter trainers
+        lessonSelect.addEventListener('change', () => {
+            updateDropdowns();
             filterTrainers();
         });
-    </script>
+
+        categorySelect.addEventListener('change', () => {
+            updateDropdowns();
+            filterTrainers();
+        });
+
+        subcategorySelect.addEventListener('change', () => {
+            updateDropdowns();
+            filterTrainers();
+        });
+
+        document.getElementById('daySelect').addEventListener('change', filterTrainers);
+
+        // Initial setup
+        updateDropdowns();
+        filterTrainers();
+    });
+</script>
+
 </body>
 </html>

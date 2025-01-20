@@ -188,45 +188,50 @@ mysqli_close($conn);
         </div>
 
         <!-- Filter Section -->
-        <section id="filter" class="filter">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-3">
-                        <label for="categorySelect">Select Category:</label>
-                        <select id="categorySelect" class="form-select" onchange="updateSubcategories(); filterTrainers();">
-                            <option value="">All Categories</option>
-                            <?php foreach ($categories as $category => $subcategories): ?>
-                                <option value="<?= htmlspecialchars($category); ?>"><?= htmlspecialchars($category); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="subcategorySelect">Select Subcategory:</label>
-                        <select id="subcategorySelect" class="form-select" onchange="filterTrainers();">
-                            <option value="">All Subcategories</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="lessonNameSelect">Select Lesson:</label>
-                        <select id="lessonNameSelect" class="form-select" onchange="filterTrainers();">
-                            <option value="">All Lessons</option>
-                            <?php foreach ($lessonNames as $lessonName): ?>
-                                <option value="<?= htmlspecialchars($lessonName); ?>"><?= htmlspecialchars($lessonName); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-lg-3">
-                        <label for="daySelect">Select Day:</label>
-                        <select id="daySelect" class="form-select" onchange="filterTrainers();">
-                            <option value="">All Days</option>
-                            <?php foreach ($days as $day): ?>
-                                <option value="<?= htmlspecialchars($day); ?>"><?= htmlspecialchars($day); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
+<section id="filter" class="filter">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3">
+                <label for="categorySelect">Select Category:</label>
+                <select id="categorySelect" class="form-select" onchange="updateDropdowns(); filterTrainers();">
+                    <option value="">All Categories</option>
+                    <?php foreach ($categories as $category => $subcategories): ?>
+                        <option value="<?= htmlspecialchars($category); ?>"><?= htmlspecialchars($category); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
-        </section>
+            <div class="col-lg-3">
+                <label for="subcategorySelect">Select Subcategory:</label>
+                <select id="subcategorySelect" class="form-select" onchange="filterTrainers();">
+                    <option value="">All Subcategories</option>
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label for="lessonNameSelect">Select Lesson:</label>
+                <select id="lessonNameSelect" class="form-select" onchange="filterTrainers();">
+                    <option value="">All Lessons</option>
+                    <?php foreach ($lessonNames as $lessonName): ?>
+                        <option value="<?= htmlspecialchars($lessonName); ?>"><?= htmlspecialchars($lessonName); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-lg-3">
+                <label for="daySelect">Select Day:</label>
+                <select id="daySelect" class="form-select" onchange="filterTrainers();">
+                    <option value="">All Days</option>
+                    <?php foreach ($days as $day): ?>
+                        <option value="<?= htmlspecialchars($day); ?>"><?= htmlspecialchars($day); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12 text-center">
+                <button id="resetFilters" class="btn btn-secondary" onclick="resetFilters();">Reset Filters</button>
+            </div>
+        </div>
+    </div>
+</section>
 
         <!-- Trainers Section -->
         <section id="trainers" class="trainers">
@@ -350,6 +355,20 @@ mysqli_close($conn);
                 container.innerHTML += trainerCard;
             }
         });
+    }
+
+    function resetFilters() {
+        // Reset all filter dropdowns
+        document.getElementById('lessonNameSelect').value = '';
+        document.getElementById('categorySelect').value = '';
+        document.getElementById('subcategorySelect').value = '';
+        document.getElementById('daySelect').value = '';
+
+        // Reset dropdown options
+        updateDropdowns();
+
+        // Refresh the trainers display
+        filterTrainers();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
